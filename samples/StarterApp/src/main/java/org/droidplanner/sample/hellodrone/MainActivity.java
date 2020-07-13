@@ -1,6 +1,7 @@
 package org.droidplanner.sample.hellodrone;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
@@ -313,7 +314,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
             this.drone.connect(connectionParams);
         }
-
     }
 
     public void onFlightModeSelected(View view) {

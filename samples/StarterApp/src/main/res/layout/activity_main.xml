@@ -293,6 +293,8 @@
 
                 </LinearLayout>
 
+
+
                 <TextureView
                     android:id="@+id/video_content"
                     android:layout_width="match_parent"
