@@ -24,9 +24,40 @@
             android:id="@+id/Text4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="전압"/>
+            android:text="전압 0V"/>
+
+        <Spinner
+            android:id="@+id/modeSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_column="1"
+            android:spinnerMode="dropdown" />
+
+        <TextView
+            android:id="@+id/speedValueTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="속도 0m/s" />
+
+        <TextView
+            android:id="@+id/altitudeValueTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="고도 0m" />
 
     </LinearLayout>
+
+    <Button
+        android:id="@+id/btnArmTakeOff"
+        android:layout_width="90dp"
+        android:layout_height="41dp"
+        android:layout_column="1"
+        android:onClick="onArmButtonTap"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/connect" />
 
     <Button
         android:id="@+id/button"
