@@ -719,7 +719,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
     @Override
-    public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
+    public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus)  {
         switch(connectionStatus.getStatusCode()){
             case LinkConnectionStatus.FAILED:
                 Bundle extras = connectionStatus.getExtras();

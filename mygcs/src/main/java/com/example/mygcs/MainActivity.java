@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
@@ -74,7 +75,6 @@ import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, DroneListener, TowerListener, LinkListener {
-
     private static final String TAG = MainActivity.class.getSimpleName();
 
     NaverMap myMap;
@@ -86,6 +86,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Drone drone;
     private ControlTower controlTower;
     private int droneType = Type.TYPE_UNKNOWN;
+
+    private static final int DEFAULT_UDP_PORT = 14550;
+    private static final int DEFAULT_USB_BAUD_RATE = 57600;
+
     private Spinner modeSelector;
 
     Handler mainHandler;
@@ -99,6 +103,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.controlTower = new ControlTower(context);
         this.drone = new Drone(context);
 
+        this.modeSelector = (Spinner) findViewById(R.id.modeSelect);
+        this.modeSelector.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                onFlightModeSelected(view);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+
         FragmentManager fm = getSupportFragmentManager();
         MapFragment mapFragment = (MapFragment) fm.findFragmentById(R.id.map_fragment);
 
@@ -111,20 +128,55 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mainHandler = new Handler(getApplicationContext().getMainLooper());
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        this.controlTower.connect(this);
+        updateVehicleModesForType(this.droneType);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (this.drone.isConnected()) {
+            this.drone.disconnect();
+            updateConnectedButton(false);
+        }
+
+        this.controlTower.unregisterDrone(this.drone);
+        this.controlTower.disconnect();
+    }
+ //=====================================================================================================
+
     public void onBtnConnectTap(View view) {
         if (this.drone.isConnected()) {
-            this.drone.disconnect();                        //Toast.makeText(getApplicationContext(),"disconnect",Toast.LENGTH_SHORT).show();
+            this.drone.disconnect();
         } else {
             ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
-            this.drone.connect(connectionParams);           //Toast.makeText(getApplicationContext(),"connect",Toast.LENGTH_SHORT).show();
+            this.drone.connect(connectionParams);
         }
     }
-//            Spinner connectionSelector = (Spinner) findViewById(R.id.selectConnectionType);
-//            int selectedConnectionType = connectionSelector.getSelectedItemPosition();
-//
-//            ConnectionParameter connectionParams = selectedConnectionType == ConnectionType.TYPE_USB
-//                    ? ConnectionParameter.newUsbConnection(null)
-//                    : ConnectionParameter.newUdpConnection(null);
+
+    public void onFlightModeSelected(View view) {
+        VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
+
+        VehicleApi.getApi(this.drone).setVehicleMode(vehicleMode, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Vehicle mode change successful.");
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Vehicle mode change failed: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Vehicle mode change timed out.");
+            }
+        });
+    }
 
     public void onArmButtonTap(View view) {
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
@@ -240,7 +292,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
-
+        switch(connectionStatus.getStatusCode()){
+            case LinkConnectionStatus.FAILED:
+                Bundle extras = connectionStatus.getExtras();
+                String msg = null;
+                if (extras != null) {
+                    msg = extras.getString(LinkConnectionStatus.EXTRA_ERROR_MSG);
+                }
+                alertUser("Connection Failed:" + msg);
+                break;
+        }
     }
 
     @Override
@@ -286,7 +347,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     protected void updateVehicleModesForType(int droneType) {
-
         List<VehicleMode> vehicleModes = VehicleMode.getVehicleModePerDroneType(droneType);
         ArrayAdapter<VehicleMode> vehicleModeArrayAdapter = new ArrayAdapter<VehicleMode>(this, android.R.layout.simple_spinner_item, vehicleModes);
         vehicleModeArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -504,8 +564,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mark.setTag("위도: " + latLng.latitude + "경도: " + latLng.longitude);
 
                 mark.setOnClickListener(listener);
-                MyAsyncTask myAsyncTask = new MyAsyncTask();
-                myAsyncTask.execute(latLng);
+//                MyAsyncTask myAsyncTask = new MyAsyncTask();
+//                myAsyncTask.execute(latLng);
 
             }
         });
